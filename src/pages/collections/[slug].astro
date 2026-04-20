@@ -1,0 +1,53 @@
+---
+export const prerender = false;
+import Base from "../../layouts/Base.astro";
+import { anonClient } from "../../lib/supabase";
+
+const { slug } = Astro.params;
+const sb = anonClient();
+if (!sb) return new Response("Server not configured", { status: 500 });
+
+const { data: category } = await sb.from("categories").select("*").eq("slug", slug).not("published_at", "is", null).maybeSingle();
+if (!category) return new Response("Not found", { status: 404 });
+
+const { data: links } = await sb.from("product_categories").select("product_id").eq("category_id", category.id);
+const productIds = (links || []).map((l: any) => l.product_id);
+
+let products: any[] = [];
+if (productIds.length > 0) {
+  const { data } = await sb.from("products").select("id, slug, name, description, price_pence, currency, image_url, tags, is_digital").in("id", productIds).not("published_at", "is", null);
+  products = data || [];
+}
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || "https://harmony-threads-xk7m2.vercel.app";
+const collectionSchema = { "@context": "https://schema.org", "@type": "CollectionPage", "name": category.name, "url": `${siteUrl}/collections/${category.slug}`, "description": category.description || "", "mainEntity": { "@type": "ItemList", "itemListElement": products.map((p: any, i: number) => ({ "@type": "ListItem", "position": i + 1, "url": `${siteUrl}/products/${p.slug}`, "name": p.name })) } };
+---
+
+<Base title={category.meta_title || `${category.name} | Harmony Threads`} description={category.meta_description || category.description || ""} structuredData={collectionSchema}>
+  <div class="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+    <nav class="flex items-center gap-2 text-xs mb-8" style="color: var(--muted);"><a href="/" class="hover:underline">Home</a><span>/</span><a href="/shop" class="hover:underline">Shop</a><span>/</span><span>{category.name}</span></nav>
+    <div class="mb-12">
+      <h1 class="font-display text-4xl md:text-5xl font-semibold tracking-tight mb-4" style="color: var(--ink);">{category.name}</h1>
+      {category.description && <p class="text-base leading-relaxed max-w-2xl" style="color: var(--muted);">{category.description}</p>}
+    </div>
+    {category.body_html && <div class="prose prose-sm max-w-3xl mb-12 p-6 rounded-xl" style="background: #f0ebe2;"><Fragment set:html={category.body_html} /></div>}
+    {products.length > 0 ? (
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {products.map((product: any) => {
+          const currencySymbol = product.currency === 'GBP' ? '£' : '$';
+          return (
+            <a href={`/products/${product.slug}`} class="group block">
+              <div class="overflow-hidden rounded-xl mb-4 relative" style="background: #f0ebe2; aspect-ratio: 4/5;">
+                {product.image_url ? (<img src={product.image_url} alt={product.name} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />) : (<div class="w-full h-full flex items-center justify-center font-display text-6xl font-bold opacity-10" style="color: var(--ink);">H</div>)}
+                {product.is_digital && <span class="absolute top-3 left-3 text-xs px-2 py-1 rounded-full font-medium" style="background: var(--ink); color: var(--paper);">Digital</span>}
+              </div>
+              <div class="flex items-start justify-between"><div><h2 class="font-medium text-sm leading-snug">{product.name}</h2><p class="text-xs mt-1" style="color: var(--muted);">Harmony Threads</p></div><span class="font-display font-semibold text-sm">{currencySymbol}{(product.price_pence / 100).toFixed(2)}</span></div>
+            </a>
+          );
+        })}
+      </div>
+    ) : (
+      <div class="text-center py-24"><p class="font-display text-2xl font-semibold mb-3" style="color: var(--ink);">More coming soon</p><a href="/shop" class="inline-flex px-6 py-3 text-sm font-semibold text-white rounded-lg" style="background: var(--accent);">View All Products</a></div>
+    )}
+  </div>
+</Base>
