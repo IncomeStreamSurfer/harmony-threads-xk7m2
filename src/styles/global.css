@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..800&display=swap');
+@import "tailwindcss";
+
+:root {
+  --accent: #c2410c;
+  --accent-dark: #9a3412;
+  --paper: #faf7f2;
+  --ink: #1a1209;
+  --muted: #6b5e4e;
+  --border: #e8e0d0;
+}
+
+html {
+  font-family: 'Manrope', system-ui, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  scroll-behavior: smooth;
+}
+
+.font-display {
+  font-family: 'Fraunces', Georgia, serif;
+}
+
+.cart-overlay {
+  transition: opacity 0.2s ease;
+}
+.cart-drawer {
+  transition: transform 0.3s ease;
+}
