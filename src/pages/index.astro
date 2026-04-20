@@ -1,0 +1,197 @@
+---
+export const prerender = false;
+import Base from "../layouts/Base.astro";
+import { anonClient } from "../lib/supabase";
+
+const sb = anonClient();
+let featuredProducts: any[] = [];
+if (sb) {
+  const { data } = await sb.from("products").select("id,slug,name,description,price_pence,currency,image_url").not("published_at","is",null).limit(3);
+  featuredProducts = data || [];
+}
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Harmony Threads",
+  "url": import.meta.env.PUBLIC_SITE_URL || "https://harmony-threads-xk7m2.vercel.app",
+  "description": "Music-inspired merchandise and culture goods. Wear the music you love.",
+};
+---
+
+<Base
+  title="Harmony Threads — Wear the Music You Love"
+  description="Curated music merchandise — iconic band tees, vinyl culture books, and lifestyle goods for those who live the sound. Free shipping over $50."
+  structuredData={websiteSchema}
+>
+
+  <!-- HERO -->
+  <section class="relative overflow-hidden" style="min-height: 90vh; background: var(--ink);">
+    <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 20% 50%, #c2410c 0%, transparent 50%), radial-gradient(circle at 80% 20%, #92400e 0%, transparent 40%);"></div>
+    <div class="absolute right-0 top-1/2 -translate-y-1/2 font-display font-black select-none pointer-events-none" style="font-size: clamp(6rem, 20vw, 18rem); color: rgba(255,255,255,0.04); line-height: 1; letter-spacing: -0.04em; white-space: nowrap;">MUSIC</div>
+    <div class="relative max-w-7xl mx-auto px-6 lg:px-8 flex flex-col justify-center" style="min-height: 90vh; padding-top: 5rem; padding-bottom: 5rem;">
+      <div class="max-w-2xl">
+        <p class="text-xs uppercase tracking-[0.2em] font-medium mb-6" style="color: #c2410c;">Harmony Threads — Est. 2026</p>
+        <h1 class="font-display font-semibold leading-[0.95] tracking-tight mb-6" style="font-size: clamp(3.5rem, 8vw, 6.5rem); color: var(--paper);">
+          Wear the music<br /><em class="not-italic" style="color: #f97316;">you love.</em>
+        </h1>
+        <p class="text-lg leading-relaxed mb-10" style="color: #a8998a; max-width: 480px;">
+          From legendary band tees to deep-cut music culture books — everything here is for people who don't just listen, they live it.
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <a href="/shop" class="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white rounded-lg transition-all hover:-translate-y-0.5 hover:shadow-lg" style="background: var(--accent);">
+            Shop the Collection
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+          </a>
+          <a href="/collections/graphic-shirts" class="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-lg border transition-colors" style="color: var(--paper); border-color: rgba(255,255,255,0.2);">
+            Explore T-Shirts
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="absolute bottom-0 left-0 right-0 h-24" style="background: linear-gradient(to bottom, transparent, var(--paper));"></div>
+  </section>
+
+  <!-- FEATURED PRODUCTS -->
+  <section class="max-w-7xl mx-auto px-6 lg:px-8 py-24">
+    <div class="flex items-end justify-between mb-12">
+      <div>
+        <p class="text-xs uppercase tracking-[0.2em] font-medium mb-2" style="color: var(--accent);">New arrivals</p>
+        <h2 class="font-display text-4xl font-semibold tracking-tight" style="color: var(--ink);">The collection.</h2>
+      </div>
+      <a href="/shop" class="text-sm font-medium underline underline-offset-4 hidden md:block" style="color: var(--muted);">View all →</a>
+    </div>
+    {featuredProducts.length > 0 ? (
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {featuredProducts.map((product: any) => (
+          <a href={`/products/${product.slug}`} class="group block">
+            <div class="overflow-hidden rounded-lg mb-4" style="background: #f0ebe2; aspect-ratio: 4/5;">
+              {product.image_url ? (
+                <img src={product.image_url} alt={product.name} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              ) : (
+                <div class="w-full h-full flex items-center justify-center font-display text-6xl font-bold opacity-10" style="color: var(--ink);">H</div>
+              )}
+            </div>
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="font-medium text-sm leading-snug">{product.name}</h3>
+                <p class="text-xs mt-1" style="color: var(--muted);">Harmony Threads</p>
+              </div>
+              <span class="font-display font-semibold text-sm">${(product.price_pence / 100).toFixed(2)}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {[1,2,3].map(() => (
+          <div>
+            <div class="rounded-lg mb-4 animate-pulse" style="background: #e8e0d0; aspect-ratio: 4/5;"></div>
+            <div class="h-4 rounded mb-2 w-3/4" style="background: #e8e0d0;"></div>
+            <div class="h-3 rounded w-1/2" style="background: #e8e0d0;"></div>
+          </div>
+        ))}
+      </div>
+    )}
+    <div class="mt-10 md:hidden text-center">
+      <a href="/shop" class="text-sm font-medium underline underline-offset-4" style="color: var(--muted);">View all products →</a>
+    </div>
+  </section>
+
+  <!-- VALUE PROPS -->
+  <section style="background: var(--ink); color: var(--paper);" class="py-20">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div>
+          <div class="w-10 h-1 mb-6 rounded" style="background: var(--accent);"></div>
+          <h3 class="font-display text-xl font-semibold mb-3">Authentic pieces</h3>
+          <p class="text-sm leading-relaxed" style="color: #a8998a;">Every graphic licensed and curated. No bootlegs, no knockoffs — just real music culture merchandise with the story behind it.</p>
+        </div>
+        <div>
+          <div class="w-10 h-1 mb-6 rounded" style="background: var(--accent);"></div>
+          <h3 class="font-display text-xl font-semibold mb-3">Ships within 48 hours</h3>
+          <p class="text-sm leading-relaxed" style="color: #a8998a;">Physical orders packed and dispatched within 2 business days. Digital downloads available instantly after checkout — no waiting.</p>
+        </div>
+        <div>
+          <div class="w-10 h-1 mb-6 rounded" style="background: var(--accent);"></div>
+          <h3 class="font-display text-xl font-semibold mb-3">Built for music people</h3>
+          <p class="text-sm leading-relaxed" style="color: #a8998a;">We started this for the record store regulars, the front-row faithful, the ones who can name every album track. If that's you, you're home.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORIES STRIP -->
+  <section class="max-w-7xl mx-auto px-6 lg:px-8 py-24">
+    <h2 class="font-display text-3xl font-semibold tracking-tight mb-10" style="color: var(--ink);">Browse by style</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <a href="/collections/graphic-shirts" class="group relative overflow-hidden rounded-lg p-6 flex flex-col justify-end" style="background: #1a1209; min-height: 220px;">
+        <div class="absolute inset-0 opacity-30" style="background: url('https://burst.shopifycdn.com/photos/forest-hiker.jpg?width=500') center/cover;"></div>
+        <div class="relative"><span class="text-xs uppercase tracking-wider font-medium mb-1 block" style="color: #f97316;">Collection</span><span class="font-display text-xl font-semibold" style="color: white;">Graphic Tees</span></div>
+      </a>
+      <a href="/collections/vintage" class="group relative overflow-hidden rounded-lg p-6 flex flex-col justify-end" style="background: #2d1a0a; min-height: 220px;">
+        <div class="relative"><span class="text-xs uppercase tracking-wider font-medium mb-1 block" style="color: #f97316;">Collection</span><span class="font-display text-xl font-semibold" style="color: white;">Vintage Style</span></div>
+      </a>
+      <a href="/collections/digital" class="group relative overflow-hidden rounded-lg p-6 flex flex-col justify-end" style="background: #0f2027; min-height: 220px;">
+        <div class="relative"><span class="text-xs uppercase tracking-wider font-medium mb-1 block" style="color: #f97316;">Digital</span><span class="font-display text-xl font-semibold" style="color: white;">eBooks &amp; Audio</span></div>
+      </a>
+      <a href="/collections/unisex" class="group relative overflow-hidden rounded-lg p-6 flex flex-col justify-end" style="background: #1a1209; min-height: 220px;">
+        <div class="relative"><span class="text-xs uppercase tracking-wider font-medium mb-1 block" style="color: #f97316;">Collection</span><span class="font-display text-xl font-semibold" style="color: white;">Unisex Fits</span></div>
+      </a>
+    </div>
+  </section>
+
+  <!-- QUOTE / EDITORIAL -->
+  <section style="background: #f0ebe2;" class="py-24">
+    <div class="max-w-3xl mx-auto px-6 lg:px-8 text-center">
+      <p class="font-display text-3xl md:text-4xl font-semibold leading-tight tracking-tight mb-6" style="color: var(--ink);">
+        &#34;Music gives a soul to the universe, wings to the mind, flight to the imagination, and life to everything.&#34;
+      </p>
+      <p class="text-sm font-medium" style="color: var(--muted);">&#8212; Plato</p>
+      <div class="mt-10"><a href="/about" class="inline-flex items-center gap-2 text-sm font-medium underline underline-offset-4" style="color: var(--accent);">Our story — why we built this →</a></div>
+    </div>
+  </section>
+
+  <!-- NEWSLETTER -->
+  <section class="max-w-7xl mx-auto px-6 lg:px-8 py-24">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-8 border-t border-b py-12" style="border-color: var(--border);">
+      <div>
+        <h2 class="font-display text-2xl font-semibold mb-2" style="color: var(--ink);">New drops, first.</h2>
+        <p class="text-sm" style="color: var(--muted);">Join 2,400+ music fans. No spam — just new releases and restocks.</p>
+      </div>
+      <form id="subscribe-form" class="flex gap-3 w-full md:w-auto">
+        <input type="text" name="website" aria-hidden="true" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;opacity:0" />
+        <input type="hidden" name="renderedAt" value={Date.now()} />
+        <input type="email" name="email" required placeholder="your@email.com" class="flex-1 md:w-64 px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-600" style="border-color: var(--border); background: white;" />
+        <button type="submit" class="px-5 py-2.5 text-sm font-semibold text-white rounded-lg transition-colors hover:opacity-90" style="background: var(--accent);">Subscribe</button>
+      </form>
+    </div>
+  </section>
+
+  <script>
+    document.getElementById('subscribe-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const data = Object.fromEntries(new FormData(form).entries());
+      const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      btn.textContent = 'Joining…';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (res.ok) {
+          form.innerHTML = '<p class="text-sm font-medium" style="color:var(--accent)">You\'re in! Welcome to the Harmony Threads community.</p>';
+        } else {
+          btn.textContent = 'Subscribe';
+          btn.disabled = false;
+        }
+      } catch {
+        btn.textContent = 'Subscribe';
+        btn.disabled = false;
+      }
+    });
+  </script>
+</Base>
