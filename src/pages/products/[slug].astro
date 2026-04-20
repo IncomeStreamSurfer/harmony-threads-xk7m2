@@ -1,0 +1,157 @@
+---
+export const prerender = false;
+import Base from "../../layouts/Base.astro";
+import { anonClient } from "../../lib/supabase";
+
+const { slug } = Astro.params;
+
+const sb = anonClient();
+if (!sb) return new Response("Server not configured", { status: 500 });
+
+// Get product
+const { data: product } = await sb
+  .from("products")
+  .select("*")
+  .eq("slug", slug)
+  .not("published_at", "is", null)
+  .maybeSingle();
+
+if (!product) return new Response("Not found", { status: 404 });
+
+// Get variants
+const { data: variants } = await sb
+  .from("product_variants")
+  .select("*")
+  .eq("product_id", product.id)
+  .order("sort_order");
+
+const sizes = [...new Set((variants || []).filter((v: any) => v.size).map((v: any) => v.size))];
+const colors = [...new Set((variants || []).filter((v: any) => v.color).map((v: any) => v.color))];
+const formats = [...new Set((variants || []).filter((v: any) => v.format).map((v: any) => v.format))];
+
+const comparePrice = product.compare_at_pence ? (product.compare_at_pence / 100).toFixed(2) : null;
+const price = (product.price_pence / 100).toFixed(2);
+const currency = product.currency || 'GBP';
+const currencySymbol = currency === 'GBP' ? '&pound;' : currency === 'USD' ? '$' : currency;
+
+const productSchema = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": product.name,
+  "description": product.description || "",
+  "image": product.image_url || "",
+  "brand": { "@type": "Brand", "name": product.vendor || "Harmony Threads" },
+  "offers": {
+    "@type": "Offer",
+    "price": price,
+    "priceCurrency": currency,
+    "availability": "https://schema.org/InStock",
+    "url": new URL(Astro.url.pathname, Astro.site).toString()
+  }
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": (import.meta.env.PUBLIC_SITE_URL || "") },
+    { "@type": "ListItem", "position": 2, "name": "Shop", "item": (import.meta.env.PUBLIC_SITE_URL || "") + "/shop" },
+    { "@type": "ListItem", "position": 3, "name": product.name, "item": new URL(Astro.url.pathname, Astro.site).toString() }
+  ]
+};
+---
+
+<Base
+  title={product.meta_title || `${product.name} | Harmony Threads`}
+  description={product.meta_description || product.description || ""}
+  ogImage={product.image_url || undefined}
+  ogType="product"
+  structuredData={[productSchema, breadcrumbSchema]}
+>
+  <div class="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+    <nav class="flex items-center gap-2 text-xs mb-8" style="color: var(--muted);">
+      <a href="/" class="hover:underline">Home</a><span>/</span>
+      <a href="/shop" class="hover:underline">Shop</a><span>/</span>
+      <span>{product.name}</span>
+    </nav>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+      <div>
+        <div class="overflow-hidden rounded-xl" style="background: #f0ebe2; aspect-ratio: 1;">
+          {product.image_url ? (<img src={product.image_url} alt={product.name} class="w-full h-full object-cover" />) : (<div class="w-full h-full flex items-center justify-center font-display text-8xl font-bold opacity-10" style="color: var(--ink);">H</div>)}
+        </div>
+        {comparePrice && (<div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold" style="background: #fef3c7; color: #92400e;">Save {currencySymbol}{(parseFloat(comparePrice) - parseFloat(price)).toFixed(2)} &mdash; was {currencySymbol}{comparePrice}</div>)}
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-[0.2em] font-medium mb-2" style="color: var(--accent);">
+          {product.vendor || "Harmony Threads"}
+          {product.product_type ? ` &middot; ${product.product_type}` : ""}
+        </p>
+        <h1 class="font-display text-3xl md:text-4xl font-semibold leading-tight tracking-tight mb-4" style="color: var(--ink);">{product.name}</h1>
+        <div class="flex items-baseline gap-3 mb-6">
+          <span class="font-display text-2xl font-semibold">{currencySymbol}{price}</span>
+          {comparePrice && (<span class="text-base line-through" style="color: var(--muted);">{currencySymbol}{comparePrice}</span>)}
+        </div>
+        <p class="text-sm leading-relaxed mb-8" style="color: var(--muted);">{product.description}</p>
+        {sizes.length > 1 && (
+          <div class="mb-5">
+            <label class="text-xs uppercase tracking-wider font-semibold block mb-2" style="color: var(--ink);">Size</label>
+            <div class="flex flex-wrap gap-2" id="size-picker">
+              {sizes.map((size: string) => (<button data-size={size} class="size-btn px-4 py-2 text-sm border rounded-lg transition-all hover:border-orange-600" style="border-color: var(--border);">{size}</button>))}
+            </div>
+          </div>
+        )}
+        {colors.length > 1 && (
+          <div class="mb-5">
+            <label class="text-xs uppercase tracking-wider font-semibold block mb-2" style="color: var(--ink);">Colour</label>
+            <div class="flex flex-wrap gap-2" id="color-picker">
+              {colors.map((color: string) => (<button data-color={color} class="color-btn px-4 py-2 text-sm border rounded-lg capitalize transition-all hover:border-orange-600" style="border-color: var(--border);">{color}</button>))}
+            </div>
+          </div>
+        )}
+        {formats.length > 0 && (
+          <div class="mb-5">
+            <label class="text-xs uppercase tracking-wider font-semibold block mb-2" style="color: var(--ink);">Format</label>
+            <div class="flex flex-wrap gap-2" id="format-picker">
+              {formats.map((fmt: string) => (<button data-format={fmt} class="format-btn px-4 py-2 text-sm border rounded-lg transition-all hover:border-orange-600" style="border-color: var(--border);">{fmt}</button>))}
+            </div>
+          </div>
+        )}
+        <button id="add-to-cart" data-product-id={product.id} data-product-name={product.name} data-product-price={product.price_pence} data-product-image={product.image_url} data-first-sku={(variants && variants[0]) ? (variants[0] as any).sku : ""} class="w-full py-4 text-base font-semibold text-white rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg mt-2" style="background: var(--accent);">Add to Cart</button>
+        <div class="mt-8 space-y-3 border-t pt-8" style="border-color: var(--border);">
+          {product.requires_shipping && (<div class="flex items-center gap-3 text-sm" style="color: var(--muted);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>Dispatched within 48 hours</div>)}
+          {product.is_digital && (<div class="flex items-center gap-3 text-sm" style="color: var(--muted);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>Instant digital download after purchase</div>)}
+          <div class="flex items-center gap-3 text-sm" style="color: var(--muted);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>Secure checkout via Stripe</div>
+          <div class="flex items-center gap-3 text-sm" style="color: var(--muted);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>30-day returns on physical items</div>
+        </div>
+      </div>
+    </div>
+    {product.tags && product.tags.length > 0 && (<div class="mt-16 pt-8 border-t" style="border-color: var(--border);"><p class="text-xs uppercase tracking-wider font-medium mb-3" style="color: var(--muted);">Tagged</p><div class="flex flex-wrap gap-2">{product.tags.map((tag: string) => (<span class="px-3 py-1 text-xs border rounded-full" style="border-color: var(--border); color: var(--muted);">{tag}</span>))}</div></div>)}
+    <div class="mt-16 text-center"><a href="/shop" class="text-sm font-medium underline underline-offset-4" style="color: var(--accent);">&larr; Back to all products</a></div>
+  </div>
+  <script define:vars={{ variants: variants || [], productId: product.id, productName: product.name, productPrice: product.price_pence, productImage: product.image_url }}>
+    let selectedSize = null;
+    let selectedColor = null;
+    let selectedFormat = null;
+    function getActiveSku() {
+      if (!variants.length) return null;
+      const match = variants.find(v => {
+        const sizeMatch = !v.size || !selectedSize || v.size === selectedSize;
+        const colorMatch = !v.color || !selectedColor || v.color === selectedColor;
+        const formatMatch = !v.format || !selectedFormat || v.format === selectedFormat;
+        return sizeMatch && colorMatch && formatMatch;
+      });
+      return match || variants[0];
+    }
+    document.querySelectorAll('.size-btn').forEach(btn => { btn.addEventListener('click', () => { selectedSize = btn.dataset.size; document.querySelectorAll('.size-btn').forEach(b => { b.style.borderColor = b === btn ? '#c2410c' : 'var(--border)'; b.style.color = b === btn ? '#c2410c' : ''; b.style.fontWeight = b === btn ? '600' : ''; }); }); });
+    document.querySelectorAll('.color-btn').forEach(btn => { btn.addEventListener('click', () => { selectedColor = btn.dataset.color; document.querySelectorAll('.color-btn').forEach(b => { b.style.borderColor = b === btn ? '#c2410c' : 'var(--border)'; b.style.color = b === btn ? '#c2410c' : ''; b.style.fontWeight = b === btn ? '600' : ''; }); }); });
+    document.querySelectorAll('.format-btn').forEach(btn => { btn.addEventListener('click', () => { selectedFormat = btn.dataset.format; document.querySelectorAll('.format-btn').forEach(b => { b.style.borderColor = b === btn ? '#c2410c' : 'var(--border)'; b.style.color = b === btn ? '#c2410c' : ''; b.style.fontWeight = b === btn ? '600' : ''; }); }); });
+    document.getElementById('add-to-cart')?.addEventListener('click', () => {
+      const variant = getActiveSku();
+      const label = [];
+      if (selectedSize) label.push(selectedSize);
+      if (selectedColor) label.push(selectedColor);
+      if (selectedFormat) label.push(selectedFormat);
+      window.addToCart({ product_id: productId, variant_sku: variant?.sku || 'default', name: productName, price: productPrice, image: productImage, option1: label[0] || '', option2: label[1] || '' });
+    });
+  </script>
+</Base>
