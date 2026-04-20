@@ -1,0 +1,26 @@
+---
+export const prerender = false;
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { ssrClient } from "../../../lib/supabase";
+
+const sb = ssrClient(Astro.cookies);
+const { data: { user } } = await sb.auth.getUser();
+if (!user) return Astro.redirect("/login?next=/admin/pages");
+const { data: admin } = await sb.from("admins").select("email").eq("email", user.email ?? "").maybeSingle();
+if (!admin) return new Response("Forbidden", { status: 403 });
+
+const { id } = Astro.params;
+const { data: page } = await sb.from("pages").select("*").eq("id", id).single();
+if (!page) return new Response("Not found", { status: 404 });
+---
+<AdminLayout title={`Edit: ${page.title}`}>
+  <form method="POST" action={`/api/admin/pages/${page.id}`} class="max-w-2xl space-y-5">
+    <div><label class="block text-sm font-medium mb-1">Title</label><input type="text" name="title" value={page.title} required class="w-full px-3 py-2 border rounded text-sm" /></div>
+    <div><label class="block text-sm font-medium mb-1">Slug</label><input type="text" name="slug" value={page.slug} required class="w-full px-3 py-2 border rounded text-sm font-mono" /></div>
+    <div><label class="block text-sm font-medium mb-1">Meta title</label><input type="text" name="meta_title" value={page.meta_title ?? ""} class="w-full px-3 py-2 border rounded text-sm" /></div>
+    <div><label class="block text-sm font-medium mb-1">Meta description</label><textarea name="meta_description" rows="2" class="w-full px-3 py-2 border rounded text-sm">{page.meta_description ?? ""}</textarea></div>
+    <div><label class="block text-sm font-medium mb-1">Body HTML</label><textarea name="body_html" rows="20" class="w-full px-3 py-2 border rounded text-sm font-mono">{page.body_html ?? ""}</textarea></div>
+    <div class="flex items-center gap-2"><input type="checkbox" name="published" id="published" checked={!!page.published_at} /><label for="published" class="text-sm font-medium">Published</label></div>
+    <div class="flex gap-3"><button type="submit" class="px-5 py-2 text-sm font-semibold text-white rounded" style="background: #c2410c;">Save</button><a href="/admin/pages" class="px-5 py-2 text-sm border rounded">Cancel</a></div>
+  </form>
+</AdminLayout>

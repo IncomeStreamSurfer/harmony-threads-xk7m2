@@ -1,0 +1,29 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { ssrClient } from "../../lib/supabase";
+
+const sb = ssrClient(Astro.cookies);
+const { data: { user } } = await sb.auth.getUser();
+if (!user) return Astro.redirect("/login?next=/admin");
+const { data: admin } = await sb.from("admins").select("email,role").eq("email", user.email ?? "").maybeSingle();
+if (!admin) return new Response("Forbidden", { status: 403 });
+
+const tables = ["products", "pages", "content", "categories", "testimonials", "faqs", "orders", "subscribers", "contact_messages"];
+const counts: Record<string, number> = {};
+for (const t of tables) {
+  const { count } = await sb.from(t).select("*", { count: "exact", head: true });
+  counts[t] = count || 0;
+}
+---
+<AdminLayout title="Dashboard">
+  <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+    {Object.entries(counts).map(([table, count]) => (
+      <a href={`/admin/${table}`} class="block bg-white rounded-lg p-5 border hover:border-orange-400 transition-colors" style="border-color: #e5e7eb;">
+        <p class="text-2xl font-bold mb-1">{count}</p>
+        <p class="text-sm capitalize" style="color: #666;">{table.replace(/_/g, " ")}</p>
+      </a>
+    ))}
+  </div>
+  <p class="text-sm" style="color: #666;">Logged in as <strong>{user.email}</strong> ({admin?.role || 'owner'})</p>
+</AdminLayout>

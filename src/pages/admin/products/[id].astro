@@ -1,0 +1,31 @@
+---
+export const prerender = false;
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { ssrClient } from "../../../lib/supabase";
+
+const sb = ssrClient(Astro.cookies);
+const { data: { user } } = await sb.auth.getUser();
+if (!user) return Astro.redirect("/login?next=/admin/products");
+const { data: admin } = await sb.from("admins").select("email").eq("email", user.email ?? "").maybeSingle();
+if (!admin) return new Response("Forbidden", { status: 403 });
+
+const { id } = Astro.params;
+const { data: product } = await sb.from("products").select("*").eq("id", id).single();
+if (!product) return new Response("Not found", { status: 404 });
+---
+<AdminLayout title={`Edit: ${product.name}`}>
+  <form method="POST" action={`/api/admin/products/${product.id}`} class="max-w-2xl space-y-5">
+    <div><label class="block text-sm font-medium mb-1">Name</label><input type="text" name="name" value={product.name} required class="w-full px-3 py-2 border rounded text-sm" /></div>
+    <div><label class="block text-sm font-medium mb-1">Slug</label><input type="text" name="slug" value={product.slug} required class="w-full px-3 py-2 border rounded text-sm font-mono" /></div>
+    <div><label class="block text-sm font-medium mb-1">Description</label><textarea name="description" rows="3" class="w-full px-3 py-2 border rounded text-sm">{product.description || ""}</textarea></div>
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="block text-sm font-medium mb-1">Price (pence)</label><input type="number" name="price_pence" value={product.price_pence} required class="w-full px-3 py-2 border rounded text-sm" /></div>
+      <div><label class="block text-sm font-medium mb-1">Compare-at (pence)</label><input type="number" name="compare_at_pence" value={product.compare_at_pence || ""} class="w-full px-3 py-2 border rounded text-sm" /></div>
+    </div>
+    <div><label class="block text-sm font-medium mb-1">Image URL</label><input type="url" name="image_url" value={product.image_url || ""} class="w-full px-3 py-2 border rounded text-sm" /></div>
+    <div><label class="block text-sm font-medium mb-1">Meta title</label><input type="text" name="meta_title" value={product.meta_title || ""} class="w-full px-3 py-2 border rounded text-sm" /></div>
+    <div><label class="block text-sm font-medium mb-1">Meta description</label><textarea name="meta_description" rows="2" class="w-full px-3 py-2 border rounded text-sm">{product.meta_description || ""}</textarea></div>
+    <div class="flex items-center gap-2"><input type="checkbox" name="published" id="published" checked={!!product.published_at} /><label for="published" class="text-sm font-medium">Published</label></div>
+    <div class="flex gap-3"><button type="submit" class="px-5 py-2 text-sm font-semibold text-white rounded" style="background: #c2410c;">Save changes</button><a href="/admin/products" class="px-5 py-2 text-sm border rounded">Cancel</a></div>
+  </form>
+</AdminLayout>

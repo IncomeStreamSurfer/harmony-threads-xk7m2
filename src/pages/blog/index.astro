@@ -1,0 +1,54 @@
+---
+export const prerender = false;
+import Base from "../../layouts/Base.astro";
+import { anonClient } from "../../lib/supabase";
+
+const sb = anonClient();
+let articles: any[] = [];
+if (sb) {
+  const { data } = await sb.from("content").select("slug, title, excerpt, cover_image_url, tags, published_at").not("published_at", "is", null).order("published_at", { ascending: false });
+  articles = data || [];
+}
+---
+
+<Base title="Music Culture Blog | Harmony Threads" description="Deep dives into rock history, band profiles, and music culture.">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+    <div class="mb-12">
+      <p class="text-xs uppercase tracking-[0.2em] font-medium mb-2" style="color: var(--accent);">The archive</p>
+      <h1 class="font-display text-4xl md:text-5xl font-semibold tracking-tight" style="color: var(--ink);">Music culture.</h1>
+    </div>
+    {articles.length > 0 ? (
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {articles.map((article: any) => (
+          <a href={`/blog/${article.slug}`} class="group block">
+            <div class="overflow-hidden rounded-xl mb-4" style="background: #f0ebe2; aspect-ratio: 16/9;">
+              {article.cover_image_url ? (<img src={article.cover_image_url} alt={article.title} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />) : (<div class="w-full h-full flex items-center justify-center" style="background: var(--ink);"><span class="font-display text-4xl font-bold opacity-20" style="color: var(--paper);">&#9834;</span></div>)}
+            </div>
+            {article.tags && article.tags.length > 0 && <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--accent);">{article.tags[0]}</p>}
+            <h2 class="font-display text-xl font-semibold leading-snug mb-2 group-hover:underline" style="color: var(--ink);">{article.title}</h2>
+            {article.excerpt && <p class="text-sm leading-relaxed" style="color: var(--muted);">{article.excerpt}</p>}
+          </a>
+        ))}
+      </div>
+    ) : (
+      <div class="py-24 text-center border rounded-xl" style="border-color: var(--border);">
+        <div class="text-5xl mb-4">&#9834;</div>
+        <h2 class="font-display text-2xl font-semibold mb-3" style="color: var(--ink);">Fresh articles coming soon</h2>
+        <p class="text-sm mb-8 max-w-md mx-auto" style="color: var(--muted);">Deep dives into rock history, band profiles, and the culture around the music. Sign up to hear first.</p>
+        <form id="blog-subscribe" class="flex flex-col sm:flex-row gap-3 justify-center max-w-sm mx-auto">
+          <input type="email" name="email" required placeholder="your@email.com" class="flex-1 px-4 py-2.5 text-sm border rounded-lg" style="border-color: var(--border);" />
+          <button type="submit" class="px-5 py-2.5 text-sm font-semibold text-white rounded-lg" style="background: var(--accent);">Notify me</button>
+        </form>
+      </div>
+    )}
+  </div>
+  <script>
+    document.getElementById('blog-subscribe')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const email = (form.querySelector('input[type="email"]') as HTMLInputElement)?.value;
+      await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+      form.innerHTML = '<p class="text-sm font-medium" style="color:var(--accent)">You\'re on the list!</p>';
+    });
+  </script>
+</Base>

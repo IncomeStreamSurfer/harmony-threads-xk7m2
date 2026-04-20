@@ -1,0 +1,72 @@
+---
+export const prerender = false;
+import Base from "../layouts/Base.astro";
+import { anonClient } from "../lib/supabase";
+import { safeHtml } from "../lib/sanitize";
+
+const sb = anonClient();
+let page: any = null;
+let testimonials: any[] = [];
+if (sb) {
+  const [pageRes, testimonialRes] = await Promise.all([
+    sb.from("pages").select("*").eq("slug", "about").not("published_at","is",null).maybeSingle(),
+    sb.from("testimonials").select("*").order("sort_order"),
+  ]);
+  page = pageRes.data;
+  testimonials = testimonialRes.data || [];
+}
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || "https://harmony-threads-xk7m2.vercel.app";
+const aboutSchema = {
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "name": "About Harmony Threads",
+  "url": `${siteUrl}/about`,
+  "description": "The story behind Harmony Threads.",
+  "publisher": { "@type": "Organization", "name": "Harmony Threads", "url": siteUrl }
+};
+---
+
+<Base title="About Harmony Threads | Music Merch with a Story" description="Harmony Threads was built for the record-store regulars, the front-row faithful. Learn our story." structuredData={aboutSchema}>
+  <div style="background: var(--ink);" class="py-24 px-6">
+    <div class="max-w-3xl mx-auto">
+      <p class="text-xs uppercase tracking-[0.2em] font-medium mb-4" style="color: #c2410c;">Our story</p>
+      <h1 class="font-display text-5xl md:text-6xl font-semibold leading-[0.95] tracking-tight" style="color: var(--paper);">Built for music<br /><em class="not-italic" style="color: #f97316;">people.</em></h1>
+    </div>
+  </div>
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    {page ? (<div class="prose prose-lg" set:html={safeHtml(page.body_html || "")} />) : (
+      <div class="prose prose-lg">
+        <p>Harmony Threads was born from a record shop mentality — the belief that the stuff you wear and carry should carry a story worth telling.</p>
+        <p>We started in 2026 with a small collection of graphic tees licensed from independent artists and band estates. Every piece we sell captures something real about the music it represents.</p>
+        <p>We sell physical merchandise alongside digital products like music history books and audio guides. Based in the UK, shipping worldwide. Family-run, fiercely independent, deeply obsessed with rock history.</p>
+      </div>
+    )}
+    <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 pt-16 border-t" style="border-color: var(--border);">
+      <div><div class="w-8 h-1 mb-4 rounded" style="background: var(--accent);"></div><h3 class="font-display text-lg font-semibold mb-2">Licensed &amp; authentic</h3><p class="text-sm leading-relaxed" style="color: var(--muted);">Every graphic properly licensed. No bootlegs, ever.</p></div>
+      <div><div class="w-8 h-1 mb-4 rounded" style="background: var(--accent);"></div><h3 class="font-display text-lg font-semibold mb-2">Quality first</h3><p class="text-sm leading-relaxed" style="color: var(--muted);">Premium 150g cotton, screen-printed graphics built to last years.</p></div>
+      <div><div class="w-8 h-1 mb-4 rounded" style="background: var(--accent);"></div><h3 class="font-display text-lg font-semibold mb-2">Independent</h3><p class="text-sm leading-relaxed" style="color: var(--muted);">Every order matters to us. If something's wrong, you're talking to a person.</p></div>
+    </div>
+  </div>
+  {testimonials.length > 0 && (
+    <section style="background: #f0ebe2;" class="py-20 mt-8">
+      <div class="max-w-5xl mx-auto px-6">
+        <h2 class="font-display text-3xl font-semibold tracking-tight mb-12" style="color: var(--ink);">What our customers say</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {testimonials.map((t: any) => (
+            <div class="bg-white rounded-xl p-6 border" style="border-color: var(--border);">
+              <div class="flex mb-3">{Array.from({length: t.rating || 5}).map(() => (<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#c2410c"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>))}</div>
+              <p class="text-sm leading-relaxed mb-4" style="color: var(--ink);">&#34;{t.quote}&#34;</p>
+              <div><p class="text-sm font-semibold">{t.author_name}</p>{t.author_title && <p class="text-xs" style="color: var(--muted);">{t.author_title}</p>}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+  <div class="max-w-3xl mx-auto px-6 py-20 text-center">
+    <h2 class="font-display text-3xl font-semibold mb-4" style="color: var(--ink);">Ready to find your piece?</h2>
+    <p class="text-sm mb-8" style="color: var(--muted);">Explore the full collection — from iconic band tees to music culture books.</p>
+    <a href="/shop" class="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white rounded-lg" style="background: var(--accent);">Browse the Shop →</a>
+  </div>
+</Base>

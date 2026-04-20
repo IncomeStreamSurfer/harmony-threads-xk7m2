@@ -1,0 +1,31 @@
+---
+export const prerender = false;
+import Base from "../../layouts/Base.astro";
+import { anonClient } from "../../lib/supabase";
+import { safeHtml } from "../../lib/sanitize";
+
+const { slug } = Astro.params;
+const sb = anonClient();
+if (!sb) return new Response("Server not configured", { status: 500 });
+
+const { data: article } = await sb.from("content").select("*").eq("slug", slug).not("published_at", "is", null).maybeSingle();
+if (!article) return new Response("Not found", { status: 404 });
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || "https://harmony-threads-xk7m2.vercel.app";
+const blogSchema = { "@context": "https://schema.org", "@type": "BlogPosting", "headline": article.title, "datePublished": article.published_at, "author": { "@type": "Organization", "name": "Harmony Threads" }, "publisher": { "@type": "Organization", "name": "Harmony Threads" } };
+---
+
+<Base title={article.seo_title || `${article.title} | Harmony Threads`} description={article.seo_description || article.excerpt || ""} ogImage={article.cover_image_url || undefined} ogType="article" structuredData={blogSchema}>
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <nav class="flex items-center gap-2 text-xs mb-8" style="color: var(--muted);"><a href="/" class="hover:underline">Home</a><span>/</span><a href="/blog" class="hover:underline">Blog</a><span>/</span><span>{article.title}</span></nav>
+    {article.tags && article.tags.length > 0 && <p class="text-xs uppercase tracking-[0.2em] font-medium mb-3" style="color: var(--accent);">{article.tags[0]}</p>}
+    <h1 class="font-display text-4xl md:text-5xl font-semibold leading-tight tracking-tight mb-4" style="color: var(--ink);">{article.title}</h1>
+    {article.published_at && <p class="text-sm mb-8" style="color: var(--muted);">Published {new Date(article.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} · Harmony Threads</p>}
+    {article.cover_image_url && <div class="overflow-hidden rounded-xl mb-12" style="aspect-ratio: 16/9;"><img src={article.cover_image_url} alt={article.title} class="w-full h-full object-cover" /></div>}
+    <div class="prose prose-lg max-w-none" set:html={safeHtml(article.body || "")} />
+    <div class="mt-16 pt-8 border-t flex gap-6 items-start justify-between" style="border-color: var(--border);">
+      <a href="/blog" class="text-sm font-medium underline underline-offset-4" style="color: var(--muted);">← All articles</a>
+      <a href="/shop" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-lg" style="background: var(--accent);">Shop the collection →</a>
+    </div>
+  </div>
+</Base>

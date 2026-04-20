@@ -1,0 +1,32 @@
+---
+export const prerender = false;
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { ssrClient } from "../../../lib/supabase";
+
+const sb = ssrClient(Astro.cookies);
+const { data: { user } } = await sb.auth.getUser();
+if (!user) return Astro.redirect("/login?next=/admin/content");
+const { data: admin } = await sb.from("admins").select("email").eq("email", user.email ?? "").maybeSingle();
+if (!admin) return new Response("Forbidden", { status: 403 });
+
+const { data: articles } = await sb.from("content").select("id, slug, title, published_at, updated_at").order("created_at", { ascending: false });
+---
+<AdminLayout title="Blog Posts">
+  <p class="text-sm mb-6" style="color: #666;">Articles created by Harbor Writer.</p>
+  <div class="bg-white rounded-lg border overflow-hidden" style="border-color: #e5e7eb;">
+    <table class="w-full text-sm">
+      <thead style="background: #f9fafb;"><tr><th class="text-left px-4 py-3 font-medium">Title</th><th class="text-left px-4 py-3 font-medium">Slug</th><th class="text-center px-4 py-3 font-medium">Status</th><th class="px-4 py-3"></th></tr></thead>
+      <tbody>
+        {(articles || []).length === 0 && <tr><td colspan="4" class="px-4 py-8 text-center text-sm" style="color: #6b7280;">No articles yet.</td></tr>}
+        {(articles || []).map((a: any) => (
+          <tr class="border-t" style="border-color: #f3f4f6;">
+            <td class="px-4 py-3 font-medium">{a.title}</td>
+            <td class="px-4 py-3 font-mono text-xs" style="color: #6b7280;">{a.slug}</td>
+            <td class="px-4 py-3 text-center"><span class={`text-xs px-2 py-0.5 rounded-full ${a.published_at ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{a.published_at ? 'Live' : 'Draft'}</span></td>
+            <td class="px-4 py-3 text-right"><a href={`/blog/${a.slug}`} class="text-xs font-medium underline" style="color: #6b7280;" target="_blank">View</a></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</AdminLayout>

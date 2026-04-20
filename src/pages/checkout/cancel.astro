@@ -1,0 +1,18 @@
+---
+export const prerender = false;
+import Base from "../../layouts/Base.astro";
+---
+<Base title="Checkout Cancelled | Harmony Threads" description="Your checkout was cancelled. Your cart is saved." noindex={true}>
+  <div class="max-w-xl mx-auto px-6 py-24 text-center">
+    <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-8" style="background: #f0ebe2;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.98-7.065a1 1 0 0 0-.99-1.285H7.5M7.5 14.25 5.106 5.272" /></svg>
+    </div>
+    <h1 class="font-display text-3xl font-semibold mb-3" style="color: var(--ink);">Checkout cancelled</h1>
+    <p class="text-sm mb-8" style="color: var(--muted);">No charge was made. Your cart is saved.</p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <button id="return-to-cart" class="px-6 py-3 text-sm font-semibold text-white rounded-lg" style="background: var(--accent);">Return to Cart</button>
+      <a href="/shop" class="px-6 py-3 text-sm font-medium border rounded-lg" style="border-color: var(--border); color: var(--ink);">Continue Shopping</a>
+    </div>
+  </div>
+  <script>document.getElementById('return-to-cart')?.addEventListener('click', () => { document.getElementById('cart-btn')?.click(); });</script>
+</Base>

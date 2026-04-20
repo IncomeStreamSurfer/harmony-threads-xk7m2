@@ -1,0 +1,56 @@
+---
+export const prerender = false;
+import Base from "../layouts/Base.astro";
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || "https://harmony-threads-xk7m2.vercel.app";
+const renderedAt = Date.now();
+const next = Astro.url.searchParams.get("next") || "/admin";
+---
+
+<Base
+  title="Sign In | Harmony Threads Admin"
+  description="Admin sign-in for Harmony Threads"
+  noindex={true}
+>
+  <div class="min-h-screen flex items-center justify-center px-6" style="background: var(--ink);">
+    <div class="w-full max-w-sm">
+      <div class="text-center mb-8">
+        <div class="font-display text-2xl font-semibold mb-1" style="color: var(--paper);">Harmony<span style="color: #f97316;">Threads</span></div>
+        <p class="text-sm" style="color: #a8998a;">Admin Access</p>
+      </div>
+      <div class="rounded-xl p-8" style="background: var(--paper);">
+        <h1 class="font-display text-xl font-semibold mb-6" style="color: var(--ink);">Sign in</h1>
+        <form id="login-form" class="space-y-4">
+          <input type="hidden" name="next" value={next} />
+          <input type="hidden" name="renderedAt" value={renderedAt} />
+          <div>
+            <label class="text-xs font-medium uppercase tracking-wider block mb-1.5" style="color: var(--muted);">Email address</label>
+            <input type="email" name="email" required placeholder="your@email.com" class="w-full px-4 py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-600" style="border-color: var(--border);" />
+          </div>
+          <button type="submit" id="login-btn" class="w-full py-3 text-sm font-semibold text-white rounded-lg" style="background: var(--accent);">Send magic link</button>
+          <div id="login-success" class="hidden text-center">
+            <p class="text-sm font-medium" style="color: var(--accent);">Check your inbox!</p>
+            <p class="text-xs mt-1" style="color: var(--muted);">We sent a sign-in link to your email.</p>
+          </div>
+        </form>
+      </div>
+      <p class="text-center mt-4 text-xs" style="color: #6b5e4e;">Only admin-authorised emails can access this area.</p>
+    </div>
+  </div>
+  <script>
+    document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const email = (form.querySelector('input[type="email"]') as HTMLInputElement).value;
+      const next = (form.querySelector('input[name="next"]') as HTMLInputElement).value;
+      const btn = document.getElementById('login-btn') as HTMLButtonElement;
+      btn.textContent = 'Sending…';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, next }) });
+        if (res.ok) { form.style.display = 'none'; document.getElementById('login-success')?.classList.remove('hidden'); }
+        else { btn.textContent = 'Send magic link'; btn.disabled = false; alert('Could not send login link. Please try again.'); }
+      } catch { btn.textContent = 'Send magic link'; btn.disabled = false; }
+    });
+  </script>
+</Base>

@@ -1,0 +1,38 @@
+---
+export const prerender = false;
+import Base from "../../layouts/Base.astro";
+import { stripe } from "../../lib/stripe";
+
+const sessionId = Astro.url.searchParams.get("session_id");
+let session: any = null;
+if (sessionId) {
+  try { session = await stripe().checkout.sessions.retrieve(sessionId); } catch {}
+}
+---
+<Base title="Order Confirmed | Harmony Threads" description="Your Harmony Threads order is confirmed." noindex={true}>
+  <div class="max-w-xl mx-auto px-6 py-24 text-center">
+    {session ? (
+      <>
+        <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-8" style="background: #dcfce7;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+        </div>
+        <h1 class="font-display text-4xl font-semibold mb-3" style="color: var(--ink);">Order confirmed!</h1>
+        <p class="text-sm mb-2" style="color: var(--muted);">Thanks{session.customer_details?.name ? `, ${session.customer_details.name}` : ""}! We've received your order.</p>
+        {session.customer_details?.email && <p class="text-sm mb-8" style="color: var(--muted);">A confirmation email has been sent to <strong>{session.customer_details.email}</strong>.</p>}
+        <div class="p-6 rounded-xl text-left mb-8" style="background: #f0ebe2;">
+          <p class="text-xs uppercase tracking-wider font-semibold mb-3" style="color: var(--muted);">Order summary</p>
+          <div class="flex justify-between text-sm"><span style="color: var(--muted);">Order total</span><span class="font-semibold">{(session.currency || 'gbp').toUpperCase()} {((session.amount_total || 0) / 100).toFixed(2)}</span></div>
+          <div class="flex justify-between text-sm mt-2"><span style="color: var(--muted);">Reference</span><span class="font-mono text-xs">{session.id.slice(-10).toUpperCase()}</span></div>
+        </div>
+        <a href="/shop" class="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white rounded-lg" style="background: var(--accent);">Continue Shopping</a>
+      </>
+    ) : (
+      <>
+        <h1 class="font-display text-3xl font-semibold mb-4" style="color: var(--ink);">Order processed</h1>
+        <p class="text-sm mb-8" style="color: var(--muted);">Thank you for your order. Check your email for confirmation.</p>
+        <a href="/shop" class="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white rounded-lg" style="background: var(--accent);">Back to Shop</a>
+      </>
+    )}
+  </div>
+  <script>localStorage.removeItem('ht_cart');</script>
+</Base>
