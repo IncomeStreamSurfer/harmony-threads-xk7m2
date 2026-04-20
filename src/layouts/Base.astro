@@ -1,0 +1,164 @@
+---
+import SEOHead from "../components/SEOHead.astro";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+  ogImage?: string;
+  ogType?: string;
+  canonicalUrl?: string;
+  structuredData?: object | object[];
+  noindex?: boolean;
+}
+
+const { title, description, ogImage, ogType, canonicalUrl, structuredData, noindex } = Astro.props;
+
+const orgSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Harmony Threads",
+  "url": import.meta.env.PUBLIC_SITE_URL || "https://harmony-threads-xk7m2.vercel.app",
+  "logo": (import.meta.env.PUBLIC_SITE_URL || "https://harmony-threads-xk7m2.vercel.app") + "/favicon.svg",
+  "sameAs": []
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <SEOHead
+      title={title}
+      description={description}
+      ogImage={ogImage}
+      ogType={ogType}
+      canonicalUrl={canonicalUrl}
+      structuredData={structuredData ? (Array.isArray(structuredData) ? [orgSchema, ...structuredData] : [orgSchema, structuredData]) : [orgSchema]}
+      noindex={noindex}
+    />
+  </head>
+  <body class="min-h-screen flex flex-col" style="background: var(--paper); color: var(--ink);">
+    <header id="site-header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style="background: transparent;">
+      <nav class="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
+        <a href="/" class="font-display text-xl font-semibold tracking-tight" style="color: var(--ink);">Harmony<span style="color: var(--accent);">Threads</span></a>
+        <div class="hidden md:flex items-center gap-8">
+          <a href="/shop" class="text-sm font-medium transition-colors hover:text-orange-700" style="color: var(--muted);">Shop</a>
+          <a href="/collections/graphic-shirts" class="text-sm font-medium transition-colors hover:text-orange-700" style="color: var(--muted);">T-Shirts</a>
+          <a href="/collections/digital" class="text-sm font-medium transition-colors hover:text-orange-700" style="color: var(--muted);">Digital</a>
+          <a href="/about" class="text-sm font-medium transition-colors hover:text-orange-700" style="color: var(--muted);">About</a>
+          <a href="/contact" class="text-sm font-medium transition-colors hover:text-orange-700" style="color: var(--muted);">Contact</a>
+        </div>
+        <div class="flex items-center gap-4">
+          <button id="cart-btn" aria-label="Open cart" class="relative flex items-center gap-2 text-sm font-medium" style="color: var(--ink);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.98-7.065a1 1 0 0 0-.99-1.285H7.5M7.5 14.25 5.106 5.272M7.5 14.25l-1.5 6h12" /></svg>
+            <span id="cart-count" class="hidden absolute -top-1 -right-1 text-xs font-bold text-white rounded-full w-4 h-4 flex items-center justify-center" style="background: var(--accent); font-size:10px;">0</span>
+          </button>
+          <button id="mobile-menu-btn" class="md:hidden" aria-label="Menu"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></button>
+        </div>
+      </nav>
+      <div id="mobile-menu" class="hidden md:hidden border-t" style="background: var(--paper); border-color: var(--border);">
+        <div class="px-6 py-4 flex flex-col gap-4">
+          <a href="/shop" class="text-sm font-medium" style="color: var(--ink);">Shop All</a>
+          <a href="/collections/graphic-shirts" class="text-sm font-medium" style="color: var(--ink);">Graphic T-Shirts</a>
+          <a href="/collections/digital" class="text-sm font-medium" style="color: var(--ink);">Digital Downloads</a>
+          <a href="/about" class="text-sm font-medium" style="color: var(--ink);">About</a>
+          <a href="/contact" class="text-sm font-medium" style="color: var(--ink);">Contact</a>
+        </div>
+      </div>
+    </header>
+    <div id="cart-overlay" class="cart-overlay fixed inset-0 bg-black/40 z-40 opacity-0 pointer-events-none"></div>
+    <aside id="cart-drawer" class="cart-drawer fixed top-0 right-0 h-full w-full max-w-sm z-50 flex flex-col shadow-2xl translate-x-full" style="background: var(--paper);">
+      <div class="flex items-center justify-between p-6 border-b" style="border-color: var(--border);">
+        <h2 class="font-display text-xl font-semibold">Your Cart</h2>
+        <button id="cart-close" aria-label="Close cart"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg></button>
+      </div>
+      <div id="cart-items" class="flex-1 overflow-y-auto p-6"><p class="text-sm" style="color: var(--muted);">Your cart is empty.</p></div>
+      <div class="p-6 border-t" style="border-color: var(--border);">
+        <div class="flex justify-between mb-4"><span class="font-medium">Total</span><span id="cart-total" class="font-display font-semibold text-lg">£0.00</span></div>
+        <button id="checkout-btn" class="w-full py-3 text-sm font-semibold text-white rounded-lg" style="background: var(--accent);">Proceed to Checkout</button>
+        <p class="text-xs text-center mt-3" style="color: var(--muted);">Secure checkout via Stripe</p>
+      </div>
+    </aside>
+    <main class="flex-1 pt-16"><slot /></main>
+    <footer class="border-t mt-24" style="border-color: var(--border); background: var(--ink); color: var(--paper);">
+      <div class="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div class="md:col-span-2">
+            <div class="font-display text-2xl font-semibold mb-4">Harmony<span style="color: #f97316;">Threads</span></div>
+            <p class="text-sm leading-relaxed mb-6" style="color: #a8998a; max-width: 300px;">Curated music merchandise and culture goods for those who live the sound.</p>
+            <a href="/shop" class="text-xs uppercase tracking-widest font-medium px-4 py-2 border border-white/20 rounded hover:border-orange-400 transition-colors">Shop Now</a>
+          </div>
+          <div>
+            <h4 class="text-xs uppercase tracking-widest font-semibold mb-4" style="color: #a8998a;">Shop</h4>
+            <ul class="space-y-2">
+              <li><a href="/shop" class="text-sm hover:text-orange-400 transition-colors" style="color: #d4c9bb;">All Products</a></li>
+              <li><a href="/collections/graphic-shirts" class="text-sm hover:text-orange-400 transition-colors" style="color: #d4c9bb;">Graphic T-Shirts</a></li>
+              <li><a href="/collections/vintage" class="text-sm hover:text-orange-400 transition-colors" style="color: #d4c9bb;">Vintage Style</a></li>
+              <li><a href="/collections/digital" class="text-sm hover:text-orange-400 transition-colors" style="color: #d4c9bb;">Digital Downloads</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-xs uppercase tracking-widest font-semibold mb-4" style="color: #a8998a;">Company</h4>
+            <ul class="space-y-2">
+              <li><a href="/about" class="text-sm hover:text-orange-400 transition-colors" style="color: #d4c9bb;">About Us</a></li>
+              <li><a href="/contact" class="text-sm hover:text-orange-400 transition-colors" style="color: #d4c9bb;">Contact</a></li>
+              <li><a href="/blog" class="text-sm hover:text-orange-400 transition-colors" style="color: #d4c9bb;">Blog</a></li>
+              <li><a href="/admin" class="text-sm hover:text-orange-400 transition-colors" style="color: #d4c9bb;">Admin</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4" style="border-color: rgba(255,255,255,0.1);">
+          <p class="text-xs" style="color: #6b5e4e;">&copy; 2026 Harmony Threads. All rights reserved.</p>
+          <p class="text-xs" style="color: #6b5e4e;">Secure payments by Stripe</p>
+        </div>
+      </div>
+    </footer>
+    <script>
+      let cart: Array<{product_id: string; qty: number; variant_sku: string; name: string; price: number; image?: string; option1?: string; option2?: string}> = [];
+      function loadCart() { try { cart = JSON.parse(localStorage.getItem('ht_cart') || '[]'); } catch { cart = []; } renderCart(); }
+      function saveCart() { localStorage.setItem('ht_cart', JSON.stringify(cart)); renderCart(); }
+      function renderCart() {
+        const count = cart.reduce((s, i) => s + i.qty, 0);
+        const countEl = document.getElementById('cart-count');
+        if (countEl) { if (count > 0) { countEl.textContent = String(count); countEl.classList.remove('hidden'); countEl.classList.add('flex'); } else { countEl.classList.add('hidden'); countEl.classList.remove('flex'); } }
+        const itemsEl = document.getElementById('cart-items');
+        const totalEl = document.getElementById('cart-total');
+        if (itemsEl) {
+          if (!cart.length) { itemsEl.innerHTML = '<p class="text-sm" style="color:var(--muted)">Your cart is empty.</p>'; }
+          else { itemsEl.innerHTML = cart.map((item, idx) => `<div class="flex gap-3 mb-4 pb-4 border-b" style="border-color:var(--border)">${item.image ? `<img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded" />` : ''}<div class="flex-1 min-w-0"><p class="text-sm font-medium">${item.name}</p>${item.option1 ? `<p class="text-xs" style="color:var(--muted)">${item.option1}${item.option2 ? ` / ${item.option2}` : ''}</p>` : ''}<div class="flex items-center justify-between mt-2"><div class="flex items-center gap-2"><button onclick="updateQty(${idx}, -1)" class="w-6 h-6 border rounded text-sm" style="border-color:var(--border)">−</button><span class="text-sm w-6 text-center">${item.qty}</span><button onclick="updateQty(${idx}, 1)" class="w-6 h-6 border rounded text-sm" style="border-color:var(--border)">+</button></div><span class="text-sm font-semibold">£${(item.price * item.qty / 100).toFixed(2)}</span></div></div></div>`).join(''); }
+        }
+        if (totalEl) { const total = cart.reduce((s, i) => s + i.price * i.qty, 0); totalEl.textContent = '£' + (total / 100).toFixed(2); }
+      }
+      (window as any).updateQty = function(idx: number, delta: number) { cart[idx].qty += delta; if (cart[idx].qty <= 0) cart.splice(idx, 1); saveCart(); };
+      (window as any).addToCart = function(item: any) { const existing = cart.find(c => c.variant_sku === item.variant_sku); if (existing) { existing.qty += 1; } else { cart.push({ ...item, qty: 1 }); } saveCart(); openCart(); };
+      function openCart() { document.getElementById('cart-drawer')?.classList.remove('translate-x-full'); document.getElementById('cart-overlay')?.classList.remove('opacity-0', 'pointer-events-none'); document.getElementById('cart-overlay')?.classList.add('opacity-100'); }
+      function closeCart() { document.getElementById('cart-drawer')?.classList.add('translate-x-full'); document.getElementById('cart-overlay')?.classList.add('opacity-0', 'pointer-events-none'); document.getElementById('cart-overlay')?.classList.remove('opacity-100'); }
+      document.getElementById('cart-btn')?.addEventListener('click', openCart);
+      document.getElementById('cart-close')?.addEventListener('click', closeCart);
+      document.getElementById('cart-overlay')?.addEventListener('click', closeCart);
+      document.getElementById('mobile-menu-btn')?.addEventListener('click', () => { document.getElementById('mobile-menu')?.classList.toggle('hidden'); });
+      document.getElementById('checkout-btn')?.addEventListener('click', async () => {
+        if (!cart.length) return;
+        const btn = document.getElementById('checkout-btn') as HTMLButtonElement;
+        btn.textContent = 'Redirecting…'; btn.disabled = true;
+        try {
+          const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: cart.map(c => ({ product_id: c.product_id, qty: c.qty, variant_sku: c.variant_sku })) }) });
+          const { url, error } = await res.json();
+          if (error || !url) throw new Error(error || 'Checkout failed');
+          window.location.href = url;
+        } catch (err) { alert('Checkout error. Please try again.'); btn.textContent = 'Proceed to Checkout'; btn.disabled = false; }
+      });
+      const header = document.getElementById('site-header');
+      let lastScroll = 0;
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        if (header) {
+          if (y > 40) { header.style.background = 'rgba(250,247,242,0.95)'; header.style.backdropFilter = 'blur(8px)'; header.style.borderBottom = '1px solid #e8e0d0'; }
+          else { header.style.background = 'transparent'; header.style.backdropFilter = ''; header.style.borderBottom = ''; }
+        }
+        lastScroll = y;
+      }, { passive: true });
+      loadCart();
+    </script>
+  </body>
+</html>
